@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import {
   incrementCorrectAnswers,
+  resetCorrectAnswers,
   selectQuestions,
   selectCorrectAnswers,
 } from "./questionSlice";
@@ -92,6 +93,7 @@ const Question = () => {
     setSelectedAnswer(null);
     setTimeLeft(600);
     setShowResults(false);
+    dispatch(resetCorrectAnswers());
     localStorage.setItem("startTime", String(Date.now()));
     localStorage.setItem("currentQuestion", "0");
     localStorage.setItem("timeLeft", "600");

@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../../store";
 
 interface Question {
@@ -30,7 +30,7 @@ const initialState: QuestionState = {
       question:
         "Какой основной хук используется для работы с состоянием в React?",
       answer: ["useState", "useCallback", "useMemo"],
-      index: 1,
+      index: 0,
     },
     {
       id: 3,
@@ -47,7 +47,7 @@ const initialState: QuestionState = {
       question:
         "Какой хук используется для работы с жизненным циклом в функциональных компонентах React?",
       answer: ["useState", "useEffect", "useContext"],
-      index: 0,
+      index: 1,
     },
     {
       id: 5,
@@ -63,7 +63,7 @@ const initialState: QuestionState = {
       id: 6,
       question: "Для чего используется useEffect в React?",
       answer: [
-        "Управление побочными эффектами",
+        "Управление жизненным циклом",
         "Создание новых компонентов",
         "Определение состояния",
       ],
@@ -107,50 +107,8 @@ const initialState: QuestionState = {
       ],
       index: 0,
     },
-    {
-      id: 11,
-      question: "Для чего используется Context API в React?",
-      answer: [
-        "Для управления глобальным состоянием",
-        "Для создания новых компонентов",
-        "Для оптимизации рендеринга",
-      ],
-      index: 0,
-    },
-    {
-      id: 12,
-      question: "Какой хук используется для создания контекста в React?",
-      answer: ["createContext", "useContext", "useReducer"],
-      index: 0,
-    },
-    {
-      id: 13,
-      question: "Что такое Redux?",
-      answer: [
-        "Контейнер для управления состоянием",
-        "Фреймворк для создания API",
-        "Библиотека для работы с формами",
-      ],
-      index: 0,
-    },
-    {
-      id: 14,
-      question: "Что такое 'props drilling'?",
-      answer: [
-        "Передача пропсов через множество уровней вложенности",
-        "Метод оптимизации производительности",
-        "Техника стилизации компонентов",
-      ],
-      index: 0,
-    },
-    {
-      id: 15,
-      question: "Какой хук используется для редюсеров в React?",
-      answer: ["useReducer", "useState", "useEffect"],
-      index: 0,
-    },
   ],
-  correctAnswers: 0,
+  correctAnswers: Number(localStorage.getItem("correctAnswers")) || 0,
 };
 
 const questionSlice = createSlice({
@@ -159,11 +117,24 @@ const questionSlice = createSlice({
   reducers: {
     incrementCorrectAnswers(state) {
       state.correctAnswers += 1;
+      localStorage.setItem("correctAnswers", String(state.correctAnswers));
+    },
+    setCorrectAnswers(state, action: PayloadAction<number>) {
+      state.correctAnswers = action.payload;
+      localStorage.setItem("correctAnswers", String(state.correctAnswers));
+    },
+    resetCorrectAnswers(state) {
+      state.correctAnswers = 0;
+      localStorage.setItem("correctAnswers", "0");
     },
   },
 });
 
-export const { incrementCorrectAnswers } = questionSlice.actions;
+export const {
+  incrementCorrectAnswers,
+  setCorrectAnswers,
+  resetCorrectAnswers,
+} = questionSlice.actions;
 
 export const selectQuestions = (state: RootState) => state.question.questions;
 export const selectCorrectAnswers = (state: RootState) =>
