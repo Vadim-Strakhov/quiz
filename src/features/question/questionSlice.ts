@@ -11,6 +11,10 @@ interface Question {
 interface QuestionState {
   questions: Question[];
   correctAnswers: number;
+  correctQuestionIndex: number;
+  timeLeft: number;
+  showResults: boolean;
+  testingStarted: boolean;
 }
 
 const initialState: QuestionState = {
@@ -108,7 +112,11 @@ const initialState: QuestionState = {
       index: 0,
     },
   ],
-  correctAnswers: Number(localStorage.getItem("correctAnswers")) || 0,
+  correctAnswers: 0,
+  correctQuestionIndex: 0,
+  timeLeft: 600,
+  testingStarted: false,
+  showResults: false,
 };
 
 const questionSlice = createSlice({
@@ -117,15 +125,24 @@ const questionSlice = createSlice({
   reducers: {
     incrementCorrectAnswers(state) {
       state.correctAnswers += 1;
-      localStorage.setItem("correctAnswers", String(state.correctAnswers));
     },
     setCorrectAnswers(state, action: PayloadAction<number>) {
       state.correctAnswers = action.payload;
-      localStorage.setItem("correctAnswers", String(state.correctAnswers));
     },
     resetCorrectAnswers(state) {
       state.correctAnswers = 0;
-      localStorage.setItem("correctAnswers", "0");
+    },
+    setCurrentQuestionIndex(state, action: PayloadAction<number>) {
+      state.correctQuestionIndex = action.payload;
+    },
+    setTimeLeft(state, action: PayloadAction<number>) {
+      state.timeLeft = action.payload;
+    },
+    setShowResults(state, action: PayloadAction<boolean>) {
+      state.showResults = action.payload;
+    },
+    setTestingStarted(state, action: PayloadAction<boolean>) {
+      state.testingStarted = action.payload;
     },
   },
 });
@@ -134,10 +151,21 @@ export const {
   incrementCorrectAnswers,
   setCorrectAnswers,
   resetCorrectAnswers,
+  setCurrentQuestionIndex,
+  setTimeLeft,
+  setTestingStarted,
+  setShowResults,
 } = questionSlice.actions;
 
 export const selectQuestions = (state: RootState) => state.question.questions;
 export const selectCorrectAnswers = (state: RootState) =>
   state.question.correctAnswers;
+export const selectCurrentQuestionIndex = (state: RootState) =>
+  state.question.correctQuestionIndex;
+export const selectTimeLeft = (state: RootState) => state.question.timeLeft;
+export const selectTestingStarted = (state: RootState) =>
+  state.question.testingStarted;
+export const selectShowResults = (state: RootState) =>
+  state.question.showResults;
 
 export default questionSlice.reducer;

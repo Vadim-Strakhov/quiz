@@ -17,70 +17,55 @@ import {
   resetCorrectAnswers,
   selectQuestions,
   selectCorrectAnswers,
+  selectTimeLeft,
+  setTimeLeft,
+  setCurrentQuestionIndex,
+  selectTestingStarted,
+  setTestingStarted,
+  setShowResults,
+  selectShowResults,
+  selectCurrentQuestionIndex,
 } from "./questionSlice";
 import Results from "../../components/Result";
 
 const Question = () => {
   const questions = useSelector(selectQuestions);
   const correctAnswers = useSelector(selectCorrectAnswers);
+  const currentQuestionIndex = useSelector(selectCurrentQuestionIndex);
+  const timeLeft = useSelector(selectTimeLeft);
+  const testingStarted = useSelector(selectTestingStarted);
+  const showResults = useSelector(selectShowResults);
+
   const dispatch = useDispatch();
 
-  const [value, setValue] = useState<number>(
-    () => Number(localStorage.getItem("currentQuestion")) || 0
-  );
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(600);
-  const [showResults, setShowResults] = useState<boolean>(
-    () => localStorage.getItem("showResults") === "true"
-  );
-
-  const question = questions[value];
 
   useEffect(() => {
-    const savedStartTime = localStorage.getItem("startTime");
-    const currentTime = Date.now();
-    if (savedStartTime) {
-      const elapsedTime = Math.floor(
-        (currentTime - Number(savedStartTime)) / 1000
-      );
-      setTimeLeft(() => Math.max(600 - elapsedTime, 0));
-    } else {
-      localStorage.setItem("startTime", String(currentTime));
+    if (testingStarted) {
+      const intervalId = setInterval(() => {
+        dispatch(setTimeLeft(timeLeft - 1));
+      }, 1000);
+      return () => clearInterval(intervalId);
     }
-  }, [value]);
+  }, [testingStarted, timeLeft, dispatch]);
 
   useEffect(() => {
-    if (timeLeft > 0 && !showResults) {
-      const timerId = setInterval(() => setTimeLeft(timeLeft - 1), 1000);
-      localStorage.setItem("timeLeft", String(timeLeft));
-      return () => clearInterval(timerId);
+    if (timeLeft === 0) {
+      dispatch(setShowResults(true));
     }
-  }, [timeLeft, showResults]);
-
-  useEffect(() => {
-    localStorage.setItem("currentQuestion", String(value));
-  }, [value]);
-
-  useEffect(() => {
-    localStorage.setItem("showResults", String(showResults));
-  }, [showResults]);
+  }, [timeLeft]);
 
   const handleNextQuestion = () => {
-    if (selectedAnswer === question.index) {
+    if (selectedAnswer === questions[currentQuestionIndex].index) {
       dispatch(incrementCorrectAnswers());
     }
 
-    if (value < questions.length - 1) {
-      setValue(value + 1);
+    if (currentQuestionIndex < questions.length - 1) {
+      dispatch(setCurrentQuestionIndex(currentQuestionIndex + 1));
       setSelectedAnswer(null);
-      setTimeLeft(600); // Сброс таймера на 10 минут
-      localStorage.setItem("startTime", String(Date.now())); // Сохранение времени начала нового вопроса
+      dispatch(setTimeLeft(600));
     } else {
-      setShowResults(true);
-      localStorage.setItem("showResults", "true");
-      localStorage.removeItem("startTime");
-      localStorage.removeItem("currentQuestion");
-      localStorage.removeItem("timeLeft");
+      dispatch(setShowResults(true));
     }
   };
 
@@ -88,88 +73,111 @@ const Question = () => {
     setSelectedAnswer(Number(event.target.value));
   };
 
+  const handleStartTesting = () => {
+    dispatch(setTestingStarted(true));
+    dispatch(setTimeLeft(600));
+  };
+
   const handleRestart = () => {
-    setValue(0);
+    dispatch(setTestingStarted(false));
+    dispatch(setShowResults(false));
+    dispatch(setCurrentQuestionIndex(0));
     setSelectedAnswer(null);
-    setTimeLeft(600);
     setShowResults(false);
     dispatch(resetCorrectAnswers());
-    localStorage.setItem("startTime", String(Date.now()));
-    localStorage.setItem("currentQuestion", "0");
-    localStorage.setItem("timeLeft", "600");
-    localStorage.setItem("showResults", "false");
   };
 
   const MIN = 0;
   const MAX = questions.length;
-  const normalise = (value: number) => ((value - MIN) * 100) / (MAX - MIN);
-  const progress = normalise(value + 1);
+  const normalize = (value: number) => ((value - MIN) * 100) / (MAX - MIN);
+  const progress = normalize(currentQuestionIndex + 1);
+
+  const question = questions[currentQuestionIndex];
 
   return (
     <Container maxWidth="sm">
       <Box component="section" sx={{ marginTop: 2 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {!showResults && "Тестирование"}
-        </Typography>
-        {!showResults && (
-          <>
-            <Typography variant="body1" component="p">
-              {`${Math.floor(timeLeft / 60)} : ${
-                timeLeft % 60 < 10 ? "0" : ""
-              }${timeLeft % 60}`}
-            </Typography>
-            <LinearProgress variant="determinate" value={progress} />
-            <FormControl component="fieldset" sx={{ mt: 4 }}>
-              <FormLabel component="legend" sx={{ color: "info.main" }}>
-                {question.question}
-              </FormLabel>
-              <RadioGroup
-                aria-label="quiz"
-                name="quiz"
-                value={selectedAnswer}
-                onChange={handleSelectAnswer}
-                sx={{ mt: 2 }}
-              >
-                {question.answer.map((answer, index) => (
-                  <FormControlLabel
-                    key={index}
-                    value={index}
-                    control={<Radio />}
-                    label={answer}
-                  />
-                ))}
-              </RadioGroup>
-            </FormControl>
-          </>
-        )}
-      </Box>
-      <Box sx={{ marginTop: 2 }}>
-        {!showResults ? (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleNextQuestion}
-            disabled={selectedAnswer === null}
-          >
-            Ответить
-          </Button>
-        ) : (
-          <>
-            <Results
-              correct={correctAnswers}
-              totalQuestions={questions.length}
-            />
+        <Box component="div" sx={{ textAlign: "center" }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            {!showResults && "Тестирование React"}
+          </Typography>
+        </Box>
+        {!testingStarted ? (
+          <Box component="div" sx={{ textAlign: "center" }}>
             <Button
               variant="contained"
               color="primary"
-              onClick={handleRestart}
+              onClick={handleStartTesting}
               sx={{ mt: 2 }}
             >
-              Начать сначала
+              Начать
             </Button>
+          </Box>
+        ) : (
+          <>
+            {!showResults && (
+              <>
+                <Typography variant="body1" component="p">
+                  {`${Math.floor(timeLeft / 60)} : ${
+                    timeLeft % 60 < 10 ? "0" : ""
+                  }${timeLeft % 60}`}
+                </Typography>
+                <LinearProgress variant="determinate" value={progress} />
+                <FormControl component="fieldset" sx={{ mt: 4 }}>
+                  <FormLabel component="legend" sx={{ color: "info.main" }}>
+                    {question.question}
+                  </FormLabel>
+                  <RadioGroup
+                    aria-label="quiz"
+                    name="quiz"
+                    value={selectedAnswer}
+                    onChange={handleSelectAnswer}
+                    sx={{ mt: 2 }}
+                  >
+                    {question.answer.map((answer, index) => (
+                      <FormControlLabel
+                        key={index}
+                        value={index}
+                        control={<Radio />}
+                        label={answer}
+                      />
+                    ))}
+                  </RadioGroup>
+                </FormControl>
+              </>
+            )}
           </>
         )}
       </Box>
+      {testingStarted && (
+        <Box sx={{ marginTop: 2 }}>
+          {!showResults ? (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleNextQuestion}
+              disabled={selectedAnswer === null}
+            >
+              Ответить
+            </Button>
+          ) : (
+            <>
+              <Results
+                correct={correctAnswers}
+                totalQuestions={questions.length}
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleRestart}
+                sx={{ mt: 2 }}
+              >
+                Начать сначала
+              </Button>
+            </>
+          )}
+        </Box>
+      )}
     </Container>
   );
 };
