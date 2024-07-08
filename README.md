@@ -2,6 +2,6 @@
 
 - ### Проект доступен по ссылке - https://vadim-strakhov.github.io/quiz/
 - ### В проекте реализован функционал тестирования по вопросам, прогресс теста сохраняется при перезагрузке страницы как и финальный результат
-- ### Технологии - `react`, `typescript`, `material-ui`, `redux-toolkit`
+- ### Технологии - `react`, `typescript`, `material-ui`, `redux-persist`, `redux-toolkit`
 
 ![](test.png)
